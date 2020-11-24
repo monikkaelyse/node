@@ -17,7 +17,7 @@
 		}
 
 		#mainWrapper{
-			
+			display:none;
 		}
 
 		#chatWrapper{
@@ -40,7 +40,6 @@
 		}
 
 		#namesWrapper{
-			display:none;
 			float:left;
 			border:1px #ccc solid;
 			border-radius: 10px;
@@ -60,6 +59,7 @@
 		<div id="namesWrapper">
 			<h2>ChatIO</h2>
 			<p>Create Username:</p>
+			<div id="error"></div>
 			<form id="usernameForm">
 				<input type="text" size="35" id="username">
 				<input type="submit" value="Submit">
@@ -86,10 +86,34 @@
 		<script src="/socket.io/socket.io.js"></script>
 		<script>
 		$(function(){
-			var socket = io.connect();
-			var $messageForm = $('#messageForm');
-			var $message = $('#message');
-			var $chat = $('#chatWindow');
+			let socket = io.connect(),
+				$messageForm = $('#messageForm'),
+				$message = $('#message'),
+				$chat = $('#chatWindow'),
+				$usernameForm = $('#usernameForm'),
+				$users = $('#users'),
+				$username = $('#username'),
+				$error = $('#error');
+
+			$usernameForm.submit(function(e){
+				e.preventDefault();
+				socket.emit('new user', $username.val(), function(data){
+					if(data){
+						$('#namesWrapper').hide();
+						$('#mainWrapper').show();
+					} else{
+						$error.html('Username is taken');
+					}
+				});
+			});
+
+			socket.on('usernames', function(data){
+				let html = '';
+				data.forEach(function (item, index) {
+					html += item + '<br>';
+				});
+				$users.html(html);
+			});
 
 			$messageForm.submit(function(e){
 				e.preventDefault();
@@ -98,7 +122,7 @@
 			});
 
 			socket.on('new message', function(data){
-				$chat.append(data.msg+'<br>');
+				$chat.append('<strong>'+data.user+'</strong>: '+data.msg+'<br>');
 			});
 
 		});
